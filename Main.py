@@ -1,60 +1,49 @@
 import heapq
 
+class UCS:
+    def __init__(self):
+        self.priority_queue = []
+        self.explored = set()
 
-def uniform_cost_search(goal, start):
-    global graph, cost
-    answer = [float('inf')] * len(goal)
-    queue = [(0, start)]
-    visited = set()
-    count = 0
+    def uniform_cost_search(self, start, goal, graph):
+        heapq.heappush(self.priority_queue, (0, start, [start]))
 
-    while queue:
-        queue.sort()
-        current_cost, current_node = queue.pop(0)
+        while self.priority_queue:
+            cost, node, path = heapq.heappop(self.priority_queue)
 
-        if current_node in goal:
-            index = goal.index(current_node)
-            if answer[index] == float('inf'):
-                count += 1
-            answer[index] = min(answer[index], current_cost)
+            if node == goal:
+                return path, cost
 
-            if count == len(goal):
-                return answer
+            if node in self.explored:
+                continue
 
-        if current_node not in visited:
-            visited.add(current_node)
-            for neighbor in graph[current_node]:
-                new_cost = current_cost + cost.get((current_node, neighbor), float('inf'))
-                heapq.heappush(queue, (new_cost, neighbor))
+            self.explored.add(node)
 
-    return answer
+            for neighbor, edge_cost in graph.get(node, []):
+                if neighbor not in self.explored:
+                    total_cost = cost + edge_cost
+                    heapq.heappush(self.priority_queue, (total_cost, neighbor, path + [neighbor]))
 
+        return None
 
-if __name__ == '__main__':
-    graph = [[] for _ in range(8)]
-    cost = {}
+if __name__ == "__main__":
+    graph = {
+        'A': [('B', 1), ('C', 4)],
+        'B': [('A', 1), ('D', 2), ('E', 5)],
+        'C': [('A', 4), ('F', 3)],
+        'D': [('B', 2), ('G', 1)],
+        'E': [('B', 5), ('G', 2)],
+        'F': [('C', 3), ('G', 1)],
+        'G': [('D', 1), ('E', 2), ('F', 1)]
+    }
 
-    graph[0] = [1, 3]
-    graph[3] = [1, 6, 4]
-    graph[1] = [6]
-    graph[4] = [2, 5]
-    graph[2] = [1]
-    graph[5] = [2, 6]
-    graph[6] = [4]
+    ucs = UCS()
+    start_node = 'A'
+    goal_node = 'G'
+    result = ucs.uniform_cost_search(start_node, goal_node, graph)
 
-    cost[(0, 1)] = 2
-    cost[(0, 3)] = 5
-    cost[(1, 6)] = 1
-    cost[(3, 1)] = 5
-    cost[(3, 6)] = 6
-    cost[(3, 4)] = 2
-    cost[(2, 1)] = 4
-    cost[(4, 2)] = 4
-    cost[(4, 5)] = 3
-    cost[(5, 2)] = 6
-    cost[(5, 6)] = 3
-    cost[(6, 4)] = 7
-
-    goal = [6]
-    answer = uniform_cost_search(goal, 0)
-    print("Minimum cost from 0 to 6 is =", answer[0])
+    if result:
+        path, total_cost = result
+        print(f"Path from {start_node} to {goal_node}: {path} with total cost: {total_cost}")
+    else:
+        print(f"No path found from {start_node} to {goal_node}.")
