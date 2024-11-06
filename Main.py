@@ -1,49 +1,53 @@
 import heapq
 
-class UCS:
-    def __init__(self):
-        self.priority_queue = []
-        self.explored = set()
+class Node:
+    def __init__(self, state, parent, cost):
+        self.state = state
+        self.parent = parent
+        self.cost = cost
 
-    def uniform_cost_search(self, start, goal, graph):
-        heapq.heappush(self.priority_queue, (0, start, [start]))
+    def __lt__(self, other):
+        return self.cost < other.cost
 
-        while self.priority_queue:
-            cost, node, path = heapq.heappop(self.priority_queue)
+def ucs(start, goal, neighbors):
+    frontier = []
+    explored = set()
+    heapq.heappush(frontier, Node(start, None, 0))
 
-            if node == goal:
-                return path, cost
+    while frontier:
+        current_node = heapq.heappop(frontier)
 
-            if node in self.explored:
-                continue
+        if current_node.state == goal:
+            path = []
+            while current_node:
+                path.append(current_node.state)
+                current_node = current_node.parent
+            return path[::-1]
 
-            self.explored.add(node)
+        if current_node.state not in explored:
+            explored.add(current_node.state)
+            for neighbor, cost in neighbors(current_node.state):
+                if neighbor not in explored:
+                    heapq.heappush(frontier, Node(neighbor, current_node, current_node.cost + cost))
 
-            for neighbor, edge_cost in graph.get(node, []):
-                if neighbor not in self.explored:
-                    total_cost = cost + edge_cost
-                    heapq.heappush(self.priority_queue, (total_cost, neighbor, path + [neighbor]))
+    return None
 
-        return None
+def neighbors(state):
 
-if __name__ == "__main__":
     graph = {
-        'A': [('B', 1), ('C', 4)],
-        'B': [('A', 1), ('D', 2), ('E', 5)],
-        'C': [('A', 4), ('F', 3)],
-        'D': [('B', 2), ('G', 1)],
-        'E': [('B', 5), ('G', 2)],
-        'F': [('C', 3), ('G', 1)],
-        'G': [('D', 1), ('E', 2), ('F', 1)]
+        "A": [("B", 1), ("C", 4)],
+        "B": [("A", 1), ("C", 2), ("D", 5)],
+        "C": [("A", 4), ("B", 2), ("D", 1)],
+        "D": [("B", 5), ("C", 1)]
     }
+    return graph.get(state, [])
 
-    ucs = UCS()
-    start_node = 'A'
-    goal_node = 'G'
-    result = ucs.uniform_cost_search(start_node, goal_node, graph)
+start_state = "A"
+goal_state = "D"
 
-    if result:
-        path, total_cost = result
-        print(f"Path from {start_node} to {goal_node}: {path} with total cost: {total_cost}")
-    else:
-        print(f"No path found from {start_node} to {goal_node}.")
+path = ucs(start_state, goal_state, neighbors)
+
+if path:
+    print("Path found:", path)
+else:
+    print("No path found")
