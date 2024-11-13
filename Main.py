@@ -1,30 +1,29 @@
-from queue import PriorityQueue
+def greedy_best_first_search(graph, start, goal, heuristic):
+    frontier = [(start, heuristic[start])]
+    explored = set()
+    came_from = {start: None}
 
+    while frontier:
+        frontier.sort(key=lambda x: x[1])
+        current, _ = frontier.pop(0)
 
-def GBFS(graph, start, goal, heuristic):
-    global current
-    front = PriorityQueue()
-    front.put((heuristic[start], start))
-    curr = {}
-    curr[start] = None
-
-    while not front.empty():
-        _, current = front.get()
         if current == goal:
             break
+
+        explored.add(current)
+
         for neighbor in graph[current]:
-            if neighbor not in curr:
-                front.put((heuristic[neighbor], neighbor))
-                curr[neighbor] = current
+            if neighbor not in explored and neighbor not in [node[0] for node in frontier]:
+                frontier.append((neighbor, heuristic[neighbor]))
+                came_from[neighbor] = current
 
     path = []
     while current is not None:
         path.append(current)
-        current = curr[current]
+        current = came_from[current]
     path.reverse()
 
     return path
-
 
 graph = {
     'A': ['B', 'C'],
@@ -43,5 +42,5 @@ heuristic = {
 
 start = 'A'
 goal = 'G'
-path = GBFS(graph, start, goal, heuristic)
+path = greedy_best_first_search(graph, start, goal, heuristic)
 print("Path from start to goal:", path)
