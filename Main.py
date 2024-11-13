@@ -1,53 +1,47 @@
-import heapq
+from queue import PriorityQueue
 
-class Node:
-    def __init__(self, state, parent, cost):
-        self.state = state
-        self.parent = parent
-        self.cost = cost
 
-    def __lt__(self, other):
-        return self.cost < other.cost
+def GBFS(graph, start, goal, heuristic):
+    global current
+    front = PriorityQueue()
+    front.put((heuristic[start], start))
+    curr = {}
+    curr[start] = None
 
-def ucs(start, goal, neighbors):
-    frontier = []
-    explored = set()
-    heapq.heappush(frontier, Node(start, None, 0))
+    while not front.empty():
+        _, current = front.get()
+        if current == goal:
+            break
+        for neighbor in graph[current]:
+            if neighbor not in curr:
+                front.put((heuristic[neighbor], neighbor))
+                curr[neighbor] = current
 
-    while frontier:
-        current_node = heapq.heappop(frontier)
+    path = []
+    while current is not None:
+        path.append(current)
+        current = curr[current]
+    path.reverse()
 
-        if current_node.state == goal:
-            path = []
-            while current_node:
-                path.append(current_node.state)
-                current_node = current_node.parent
-            return path[::-1]
+    return path
 
-        if current_node.state not in explored:
-            explored.add(current_node.state)
-            for neighbor, cost in neighbors(current_node.state):
-                if neighbor not in explored:
-                    heapq.heappush(frontier, Node(neighbor, current_node, current_node.cost + cost))
 
-    return None
+graph = {
+    'A': ['B', 'C'],
+    'B': ['D', 'E'],
+    'C': ['F'],
+    'D': [],
+    'E': ['F'],
+    'F': ['G'],
+    'G': []
+}
 
-def neighbors(state):
+heuristic = {
+    'A': 7, 'B': 6, 'C': 3, 'D': 5,
+    'E': 2, 'F': 1, 'G': 0
+}
 
-    graph = {
-        "A": [("B", 1), ("C", 4)],
-        "B": [("A", 1), ("C", 2), ("D", 5)],
-        "C": [("A", 4), ("B", 2), ("D", 1)],
-        "D": [("B", 5), ("C", 1)]
-    }
-    return graph.get(state, [])
-
-start_state = "A"
-goal_state = "D"
-
-path = ucs(start_state, goal_state, neighbors)
-
-if path:
-    print("Path found:", path)
-else:
-    print("No path found")
+start = 'A'
+goal = 'G'
+path = GBFS(graph, start, goal, heuristic)
+print("Path from start to goal:", path)
