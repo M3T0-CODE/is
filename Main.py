@@ -1,62 +1,78 @@
 import random
 
-# Fitness function: maximize f(x) = x^2
+POP_SIZE = 10
+GENOME_SIZE = 5
+MUTATION_RATE = 0.01
+CROSSOVER_RATE = 0.7
+NUM_GENERATIONS = 50
+
+
 def fitness_function(x):
     return x ** 2
 
-# Generate an initial population of random integers
-def generate_population(size, lower_bound, upper_bound):
-    return [random.randint(lower_bound, upper_bound) for _ in range(size)]
 
-# Selection: choose the best individuals based on fitness
-def select_parents(population, fitnesses):
-    sorted_population = [x for _, x in sorted(zip(fitnesses, population), reverse=True)]
-    return sorted_population[:2]  # Select top 2 individuals
+def initialize_population(pop_size, genome_size):
+    population = []
+    for _ in range(pop_size):
+        genome = ''.join(random.choice('01') for _ in range(genome_size))
+        population.append(genome)
+    return population
 
-# Crossover: combine two parents to create offspring
+
+def binary_to_decimal(binary_genome):
+    return int(binary_genome, 2)
+
+
+def select(population, fitness_values):
+    tournament_size = 3
+    tournament = random.sample(list(zip(population, fitness_values)), tournament_size)
+    tournament.sort(key=lambda x: x[1], reverse=True)
+    return tournament[0][0]
+
+
 def crossover(parent1, parent2):
-    crossover_point = random.randint(1, len(bin(parent1)) - 2)  # Binary crossover
-    mask = (1 << crossover_point) - 1
-    child1 = (parent1 & mask) | (parent2 & ~mask)
-    child2 = (parent2 & mask) | (parent1 & ~mask)
-    return child1, child2
+    if random.random() > CROSSOVER_RATE:
+        return parent1, parent2
+    crossover_point = random.randint(1, len(parent1) - 1)
+    offspring1 = parent1[:crossover_point] + parent2[crossover_point:]
+    offspring2 = parent2[:crossover_point] + parent1[crossover_point:]
+    return offspring1, offspring2
 
-# Mutation: introduce random changes
-def mutate(individual, mutation_rate, lower_bound, upper_bound):
-    if random.random() < mutation_rate:
-        return random.randint(lower_bound, upper_bound)
-    return individual
 
-# Genetic algorithm main loop
-def genetic_algorithm(pop_size, generations, lower_bound, upper_bound, mutation_rate):
-    population = generate_population(pop_size, lower_bound, upper_bound)
+def mutate(genome):
+    if random.random() < MUTATION_RATE:
+        mutation_point = random.randint(0, len(genome) - 1)
+        mutated_genome = list(genome)
+        mutated_genome[mutation_point] = '1' if mutated_genome[mutation_point] == '0' else '0'
+        return ''.join(mutated_genome)
+    return genome
 
-    for generation in range(generations):
-        fitnesses = [fitness_function(ind) for ind in population]
-        parent1, parent2 = select_parents(population, fitnesses)
 
-        # Generate offspring
-        offspring = []
-        for _ in range(pop_size // 2):
-            child1, child2 = crossover(parent1, parent2)
-            offspring.append(mutate(child1, mutation_rate, lower_bound, upper_bound))
-            offspring.append(mutate(child2, mutation_rate, lower_bound, upper_bound))
+def genetic_algorithm():
+    population = initialize_population(POP_SIZE, GENOME_SIZE)
 
-        population = offspring  # Replace old population with offspring
+    for generation in range(NUM_GENERATIONS):
+        fitness_values = [fitness_function(binary_to_decimal(genome)) for genome in population]
 
-        # Output best solution in the current generation
-        best_individual = max(population, key=fitness_function)
-        print(f"Generation {generation + 1}: Best = {best_individual}, Fitness = {fitness_function(best_individual)}")
+        next_generation = []
 
-    return max(population, key=fitness_function)
+        while len(next_generation) < POP_SIZE:
+            parent1 = select(population, fitness_values)
+            parent2 = select(population, fitness_values)
 
-# Parameters
-POPULATION_SIZE = 10
-GENERATIONS = 20
-LOWER_BOUND = 0
-UPPER_BOUND = 100
-MUTATION_RATE = 0.1
+            offspring1, offspring2 = crossover(parent1, parent2)
+            next_generation.append(mutate(offspring1))
+            if len(next_generation) < POP_SIZE:
+                next_generation.append(mutate(offspring2))
 
-# Run the genetic algorithm
-best_solution = genetic_algorithm(POPULATION_SIZE, GENERATIONS, LOWER_BOUND, UPPER_BOUND, MUTATION_RATE)
-print(f"\nBest solution found: {best_solution} with Fitness = {fitness_function(best_solution)}")
+        population = next_generation
+        max_fitness = max(fitness_values)
+        print(f"Generation {generation + 1}: Max Fitness = {max_fitness}")
+
+    final_fitness_values = [fitness_function(binary_to_decimal(genome)) for genome in population]
+    best_genome = population[final_fitness_values.index(max(final_fitness_values))]
+    best_solution = binary_to_decimal(best_genome)
+    print(f"\nBest solution: {best_solution}, Fitness = {max(final_fitness_values)}")
+
+
+genetic_algorithm()
