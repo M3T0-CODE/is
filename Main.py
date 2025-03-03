@@ -1,41 +1,64 @@
-import random
+import tkinter as tk
+from tkinter import messagebox
+import itertools
+import string
 
-def create_population(pop_size, gene_length):
-    return [[random.randint(0, 1) for _ in range(gene_length)] for _ in range(pop_size)]
+CORRECT_PASSWORD = "abcde"
 
-def fitness(individual):
-    return sum(individual)
+def dictionary_attack(username, dictionary):
+    for word in dictionary:
+        if word == CORRECT_PASSWORD:
+            return True
+    return False
 
-def select(population):
-    population.sort(key=fitness, reverse=True)
-    return population[:len(population)//2]
+def brute_force_attack():
+    chars = string.ascii_letters
+    for combo in itertools.product(chars, repeat=5):
+        password = ''.join(combo)
+        if password == CORRECT_PASSWORD:
+            return password
+    return None
 
-def crossover(parent1, parent2):
-    point = random.randint(1, len(parent1) - 1)
-    child1 = parent1[:point] + parent2[point:]
-    child2 = parent2[:point] + parent1[point:]
-    return child1, child2
+def run_dictionary_attack():
+    username = username_entry.get()
+    if not username:
+        messagebox.showerror("Error", "Please enter a username")
+        return
 
-def mutate(individual, mutation_rate):
-    return [gene if random.random() > mutation_rate else 1 - gene for gene in individual]
+    dictionary = ["hello", "world", "python", "apple", "password", "test"]
 
-def genetic_algorithm(pop_size, gene_length, generations, mutation_rate):
-    population = create_population(pop_size, gene_length)
-    for _ in range(generations):
-        selected = select(population)
-        next_generation = []
-        while len(next_generation) < pop_size:
-            parent1, parent2 = random.choice(selected), random.choice(selected)
-            child1, child2 = crossover(parent1, parent2)
-            next_generation.append(mutate(child1, mutation_rate))
-            next_generation.append(mutate(child2, mutation_rate))
-        population = next_generation
-    return max(population, key=fitness)
+    if dictionary_attack(username, dictionary):
+        messagebox.showinfo("Success", f"Dictionary Attack: Password found - {CORRECT_PASSWORD}")
+    else:
+        messagebox.showerror("Failure", "Password could not be cracked using Dictionary Attack")
 
-pop_size = 100
-gene_length = 10
-generations = 100
-mutation_rate = 0.01
+def run_brute_force_attack():
+    username = username_entry.get()
+    if not username:
+        messagebox.showerror("Error", "Please enter a username")
+        return
 
-best_individual = genetic_algorithm(pop_size, gene_length, generations, mutation_rate)
-print(best_individual)
+    brute_password = brute_force_attack()
+    if brute_password:
+        messagebox.showinfo("Success", f"Brute Force Attack: Password found - {brute_password}")
+    else:
+        messagebox.showerror("Failure", "Password could not be cracked using Brute Force Attack")
+
+
+root = tk.Tk()
+root.title("Password Cracker")
+root.geometry("400x300")
+
+label = tk.Label(root, text="Enter Username:")
+label.pack(pady=10)
+
+username_entry = tk.Entry(root)
+username_entry.pack(pady=5)
+
+dictionary_button = tk.Button(root, text="Dictionary Attack", command=run_dictionary_attack)
+dictionary_button.pack(pady=10)
+
+brute_force_button = tk.Button(root, text="Brute Force Attack", command=run_brute_force_attack)
+brute_force_button.pack(pady=10)
+
+root.mainloop()
